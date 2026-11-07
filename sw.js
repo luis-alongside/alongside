@@ -1,6 +1,6 @@
 // Alongside service worker: makes the app open offline.
 // Bump VERSION whenever app files change so phones pick up the new version.
-const VERSION = "alongside-v1";
+const VERSION = "alongside-v3";
 const SHELL = ["./", "index.html", "styles.css", "app.js", "meals.js", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 
 self.addEventListener("install", e => {

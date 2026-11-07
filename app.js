@@ -228,14 +228,31 @@ function claudeMenuRequest(date){
     'Reply with ONLY this JSON and nothing else: {"meals":[{"slot":"Breakfast","title":"dish name","items":[{"food":"...","portion":"..."}],"recipe":["step"],"tip":"one short tip for the parent"}]}'
   ].join("\n");
 }
+// Open Claude with the request already filled in (and copied too, in case Claude opens empty).
+function openClaude(text){
+  const a = document.createElement("a");
+  a.href = "https://claude.ai/new?q=" + encodeURIComponent(text.slice(0, 7000));
+  a.target = "_blank"; a.rel = "noopener";
+  document.body.appendChild(a); a.click(); a.remove();
+}
+let pendingMenuReq = null;
 $("#askClaudeMenu").addEventListener("click", async () => {
   if (!S.profile){ $("#menuStatus").innerHTML = 'First <a href="#profile" data-go="profile">set up your child\'s profile</a>.'; return; }
-  const ok = await copyText(claudeMenuRequest($("#menuDate").value || TODAY));
+  pendingMenuReq = claudeMenuRequest($("#menuDate").value || TODAY);
+  await copyText(pendingMenuReq);
   $("#pasteBox").hidden = false; $("#pasteText").value = ""; $("#pasteStatus").textContent = "";
-  $("#menuStatus").textContent = ok ? "Request copied. Now open Claude and paste it." : "Couldn't copy automatically. Please try again.";
-  $("#pasteBox").scrollIntoView({ block: "start" });
+  $("#menuStatus").textContent = "";
+  openClaude(pendingMenuReq);
 });
-$("#cancelPaste").addEventListener("click", () => { $("#pasteBox").hidden = true; });
+$("#reopenClaude").addEventListener("click", async () => { if (pendingMenuReq){ await copyText(pendingMenuReq); openClaude(pendingMenuReq); } });
+$("#cancelPaste").addEventListener("click", () => { $("#pasteBox").hidden = true; pendingMenuReq = null; });
+// When you come back to Alongside from Claude, point straight at the button.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && !$("#pasteBox").hidden){
+    go("meals"); setTimeout(() => $("#pasteBox").scrollIntoView({ block: "start" }), 50);
+    $("#pasteStatus").textContent = "Welcome back. If you've copied Claude's answer, tap Use Claude's answer.";
+  }
+});
 function parseLooseJSON(t){
   t = String(t || "").trim();
   const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/i); if (fence) t = fence[1];
@@ -243,9 +260,18 @@ function parseLooseJSON(t){
   if (a < 0 || b <= a) throw new Error("no json");
   return JSON.parse(t.slice(a, b + 1));
 }
+$("#useClipboard").addEventListener("click", async () => {
+  let text = "";
+  try { text = await navigator.clipboard.readText(); }
+  catch(e){ $("#pasteStatus").textContent = "Your phone didn't let Alongside read the copied answer. Open \"Paste it myself instead\" below."; return; }
+  if (!applyClaudeMenu(text)) $("#pasteStatus").textContent = "The copied text isn't Claude's menu yet. In Claude, tap Copy under its answer, then try again.";
+});
 $("#usePaste").addEventListener("click", () => {
+  if (!applyClaudeMenu($("#pasteText").value)) $("#pasteStatus").textContent = "That doesn't look like Claude's menu answer. Copy the whole reply and try again.";
+});
+function applyClaudeMenu(text){
   try {
-    const r = parseLooseJSON($("#pasteText").value);
+    const r = parseLooseJSON(text);
     const meals = (Array.isArray(r.meals) ? r.meals : []).filter(m => m && typeof m === "object").slice(0, 8).map(m => ({
       slot: String(m.slot || ""), title: String(m.title || ""),
       items: (Array.isArray(m.items) ? m.items : []).slice(0, 12).map(i => ({ food: String(i && i.food || ""), portion: String(i && i.portion || "") })),
@@ -254,10 +280,11 @@ $("#usePaste").addEventListener("click", () => {
     if (!meals.length) throw new Error("empty");
     const date = $("#menuDate").value || TODAY;
     day(date).menu = { meals, made: new Date().toISOString(), source: "claude" }; save();
-    $("#pasteBox").hidden = true; $("#menuStatus").textContent = "Claude's menu saved.";
+    $("#pasteBox").hidden = true; pendingMenuReq = null; $("#menuStatus").textContent = "Claude's menu saved.";
     renderMenu(); renderToday();
-  } catch(e){ $("#pasteStatus").textContent = "That doesn't look like Claude's menu answer. Copy the whole reply and try again."; }
-});
+    return true;
+  } catch(e){ return false; }
+}
 
 // ---------- DIARY ----------
 const EATEN = ["All of it", "Most", "About half", "A little", "None"];
@@ -273,16 +300,23 @@ function renderLogForm(){
 $("#logEaten").addEventListener("click", e => { const b = e.target.closest("[data-e]"); if (!b) return; logEaten = b.dataset.e; renderLogForm(); });
 $("#logTags").addEventListener("click", e => { const b = e.target.closest("[data-t]"); if (!b) return; const t = b.dataset.t; logTags.has(t) ? logTags.delete(t) : logTags.add(t); renderLogForm(); });
 $("#logDistress").addEventListener("input", e => { $("#distressVal").textContent = "(" + e.target.value + " of 5)"; });
-$("#saveLog").addEventListener("click", () => {
-  stopMic();
+$("#saveLog").addEventListener("click", async () => {
+  stopVoice();
+  if (mr) { $("#logStatus").textContent = "Finishing the recording… tap Save note again in a moment."; return; }
   const date = $("#logDate").value || TODAY;
   const entry = { at: new Date().toISOString(), slot: $("#logSlot").value, eaten: logEaten || "", minutes: num($("#logMins").value), distress: +$("#logDistress").value, tags: [...logTags], notes: $("#logNotes").value.trim().slice(0, 4000) };
-  if (!entry.eaten && !entry.notes && !entry.tags.length){ $("#logStatus").textContent = "Add how much was eaten or a short note first."; return; }
+  if (!entry.eaten && !entry.notes && !entry.tags.length && !pendingClip){ $("#logStatus").textContent = "Add how much was eaten, a short note or a voice message first."; return; }
+  if (pendingClip){
+    const id = "clip-" + Date.now().toString(36);
+    try { await AudioStore.put(id, pendingClip.blob); entry.audio = id; entry.audioSecs = pendingClip.secs; }
+    catch(e){ $("#logStatus").textContent = "The voice message couldn't be saved on this phone. Please type a short note instead."; return; }
+  }
   const d = day(date); d.logs.push(entry);
   if (entry.eaten === "All of it" || entry.eaten === "Most") d.checks[entry.slot] = true;
   if (!save()) return;
   $("#logStatus").textContent = "Saved. Thank you, that was a lot to get through.";
-  logEaten = null; logTags = new Set(); $("#logMins").value = ""; $("#logDistress").value = 0; $("#distressVal").textContent = "(0 = calm, 5 = very upset)"; $("#logNotes").value = "";
+  logEaten = null; logTags = new Set(); pendingClip = null; renderClip();
+  $("#logMins").value = ""; $("#logDistress").value = 0; $("#distressVal").textContent = "(0 = calm, 5 = very upset)"; $("#logNotes").value = "";
   renderLogForm(); renderLogList(); renderInsight(); renderToday();
 });
 function allLogs(days){
@@ -298,32 +332,136 @@ function renderLogList(){
     (l.distress >= 4 ? '<span class="pill danger">Distress ' + esc(l.distress) + '/5</span>' : '') +
     (l.minutes ? ' <span class="small muted">' + esc(l.minutes) + ' min</span>' : '') +
     (l.tags && l.tags.length ? '<div class="small muted">' + esc(l.tags.join(" · ")) + '</div>' : '') +
-    (l.notes ? '<div class="small">' + esc(l.notes) + '</div>' : '') + '</div>'
+    (l.notes ? '<div class="small">' + esc(l.notes) + '</div>' : '') +
+    (l.audio ? '<div class="btns" style="margin-top:6px"><button class="btn ghost small" data-play="' + esc(l.audio) + '">▶ Play voice message' + (l.audioSecs ? " (" + fmtSecs(l.audioSecs) + ")" : "") + '</button></div>' : '') + '</div>'
   ).join("") : '<p class="muted small" style="margin:0">No notes yet.</p>';
 }
-
-// voice input (Safari speech recognition when available; keyboard microphone otherwise)
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let rec = null, recBase = "";
-function stopMic(){ if (rec) { try { rec.stop(); } catch(e){} } }
-$("#micBtn").addEventListener("click", () => {
-  if (!SR){ $("#logStatus").textContent = "Tap in the notes box, then tap the microphone on your keyboard to speak."; $("#logNotes").focus(); return; }
-  if (rec){ stopMic(); return; }
-  rec = new SR(); rec.lang = "en-GB"; rec.interimResults = true; rec.continuous = true;
-  recBase = $("#logNotes").value ? $("#logNotes").value.replace(/\s*$/, " ") : "";
-  rec.onresult = ev => {
-    let txt = "";
-    for (let i = 0; i < ev.results.length; i++) txt += ev.results[i][0].transcript;
-    $("#logNotes").value = recBase + txt;
-  };
-  rec.onerror = ev => { $("#logStatus").textContent = ev.error === "not-allowed" ? "Microphone access was blocked. You can allow it in your phone's settings, or use the keyboard microphone." : "Voice input stopped. You can tap Speak again."; };
-  rec.onend = () => { rec = null; $("#micBtn").classList.remove("recording"); $("#micBtn").setAttribute("aria-pressed", "false"); $("#micLabel").textContent = "Speak"; };
-  try {
-    rec.start();
-    $("#micBtn").classList.add("recording"); $("#micBtn").setAttribute("aria-pressed", "true"); $("#micLabel").textContent = "Stop";
-    $("#logStatus").textContent = "Listening… speak your note, then tap Stop.";
-  } catch(e){ rec = null; $("#logStatus").textContent = "Voice input isn't available here. Use the microphone on your keyboard instead."; }
+$("#logList").addEventListener("click", async e => {
+  const b = e.target.closest("[data-play]"); if (!b) return;
+  try { const blob = await AudioStore.get(b.dataset.play); if (!blob) throw 0; playBlob(blob); }
+  catch(err){ b.textContent = "Voice message not found on this phone"; b.disabled = true; }
 });
+
+// ---------- VOICE ----------
+// Two ways to use your voice:
+//  "dictate": live speech-to-text into the notes box (works in Safari on many phones,
+//             but iPhone often blocks it inside home-screen apps)
+//  "record":  saves a real voice message on this phone, which you can play back
+// The keyboard's own microphone button always works for speech-to-text too.
+const fmtSecs = s => Math.floor(s / 60) + ":" + String(Math.round(s % 60)).padStart(2, "0");
+function playBlob(blob){ const url = URL.createObjectURL(blob); const a = new Audio(url); a.onended = () => URL.revokeObjectURL(url); a.play().catch(() => {}); }
+const AudioStore = {
+  _db: null,
+  open(){ return this._db || (this._db = new Promise((res, rej) => { const r = indexedDB.open("alongside-audio", 1); r.onupgradeneeded = () => r.result.createObjectStore("clips"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); })); },
+  async put(id, blob){ const db = await this.open(); return new Promise((res, rej) => { const tx = db.transaction("clips", "readwrite"); tx.objectStore("clips").put(blob, id); tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); }); },
+  async get(id){ const db = await this.open(); return new Promise((res, rej) => { const q = db.transaction("clips", "readonly").objectStore("clips").get(id); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); }
+};
+
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const CAN_RECORD = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+let voiceMode = SR ? "dictate" : "record";
+try { const m = localStorage.getItem("alongside:voiceMode"); if (m === "record" || (m === "dictate" && SR)) voiceMode = m; } catch(e){}
+function setVoiceMode(m){ voiceMode = m; try { localStorage.setItem("alongside:voiceMode", m); } catch(e){} setMicUI(); }
+
+let rec = null, listening = false, recBase = "", finalTxt = "";
+let mr = null, chunks = [], pendingClip = null, recStart = 0, recTimer = null;
+const status = t => { $("#logStatus").textContent = t; };
+
+function setMicUI(){
+  const active = listening || !!mr;
+  $("#micBtn").classList.toggle("recording", active);
+  $("#micBtn").setAttribute("aria-pressed", String(active));
+  $("#micLabel").textContent = active ? "Stop" : (voiceMode === "dictate" ? "Speak (types for you)" : "Record voice message");
+  $("#voiceHint").textContent = "Tip: you can also tap the notes box, then the microphone on your keyboard, to turn speech into text.";
+  const sw = $("#voiceSwitch");
+  sw.hidden = active || !SR || !CAN_RECORD;
+  sw.textContent = voiceMode === "dictate" ? "Record a voice message instead" : "Try live typing instead";
+}
+$("#voiceSwitch").addEventListener("click", () => setVoiceMode(voiceMode === "dictate" ? "record" : "dictate"));
+
+function stopVoice(){
+  listening = false;
+  if (rec) { try { rec.stop(); } catch(e){} }
+  if (mr && mr.state !== "inactive") { try { mr.stop(); } catch(e){} }
+}
+$("#micBtn").addEventListener("click", () => {
+  if (listening || mr) { stopVoice(); return; }
+  if (voiceMode === "dictate" && SR) startDictation();
+  else if (CAN_RECORD) startRecording();
+  else { status("Tap in the notes box, then tap the microphone on your keyboard to speak."); $("#logNotes").focus(); }
+});
+
+function startDictation(){
+  listening = true; finalTxt = "";
+  recBase = $("#logNotes").value ? $("#logNotes").value.replace(/\s*$/, " ") : "";
+  let firstRun = true, gotSpeech = false;
+  const run = () => {
+    rec = new SR(); rec.lang = "en-GB"; rec.interimResults = true; rec.continuous = false; // short sessions work best on iPhone
+    rec.onresult = ev => {
+      gotSpeech = true; let interim = "";
+      for (let i = ev.resultIndex; i < ev.results.length; i++){
+        const t = ev.results[i][0].transcript;
+        if (ev.results[i].isFinal) finalTxt += t.trim() + " "; else interim += t;
+      }
+      $("#logNotes").value = recBase + finalTxt + interim;
+    };
+    rec.onerror = ev => {
+      const e = ev.error;
+      if (e === "no-speech" || e === "aborted") return;
+      listening = false;
+      if (firstRun && !gotSpeech && CAN_RECORD){
+        setVoiceMode("record");
+        status(e === "not-allowed" ? "Live typing was blocked on this phone. Tap Record voice message to save your voice instead, or use your keyboard's microphone." : "Live typing isn't available here. Tap Record voice message to save your voice instead, or use your keyboard's microphone.");
+      } else status("Stopped listening. Tap the button to carry on.");
+    };
+    rec.onend = () => {
+      rec = null;
+      if (listening) { firstRun = false; try { run(); } catch(e){ listening = false; setMicUI(); } }
+      else setMicUI();
+    };
+    rec.start();
+  };
+  try { run(); setMicUI(); status("Listening… speak your note. Tap Stop when you've finished."); }
+  catch(e){ listening = false; if (CAN_RECORD) setVoiceMode("record"); setMicUI(); status("Live typing isn't available here. Tap Record voice message instead."); }
+}
+
+async function startRecording(){
+  if (!CAN_RECORD){ status("This phone can't record here. Tap the notes box and use your keyboard's microphone."); return; }
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  catch(e){
+    status(e && e.name === "NotAllowedError" ? "Microphone access is off. On iPhone: open Settings → Apps → Safari → Microphone → Allow, then try again." : "The microphone couldn't start. Please try again, or use your keyboard's microphone.");
+    return;
+  }
+  const type = ["audio/mp4", "audio/webm;codecs=opus", "audio/webm"].find(t => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || "";
+  try { mr = new MediaRecorder(stream, type ? { mimeType: type } : undefined); }
+  catch(e){ stream.getTracks().forEach(t => t.stop()); status("Recording isn't available on this phone. Please use your keyboard's microphone."); return; }
+  chunks = [];
+  mr.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+  mr.onstop = () => {
+    stream.getTracks().forEach(t => t.stop());
+    clearInterval(recTimer);
+    const secs = Math.max(1, Math.round((Date.now() - recStart) / 1000));
+    const blob = new Blob(chunks, { type: (mr && mr.mimeType) || type || "audio/mp4" });
+    mr = null;
+    if (blob.size){ pendingClip = { blob, secs }; status("Voice message ready. Tap Save note to keep it."); }
+    else status("Nothing was recorded. Please try again.");
+    setMicUI(); renderClip();
+  };
+  mr.start(1000); recStart = Date.now();
+  setMicUI();
+  const tick = () => status("Recording… " + fmtSecs((Date.now() - recStart) / 1000) + ". Tap Stop when you've finished.");
+  tick(); recTimer = setInterval(tick, 500);
+}
+function renderClip(){
+  const box = $("#clipBox");
+  if (!pendingClip){ box.hidden = true; box.innerHTML = ""; return; }
+  box.hidden = false;
+  box.innerHTML = '<div class="clip"><span>🎙️ Voice message (' + fmtSecs(pendingClip.secs) + ')</span><button type="button" class="btn ghost small" id="clipPlay">▶ Play</button><button type="button" class="btn ghost small" id="clipDel">Delete</button></div>';
+  $("#clipPlay").addEventListener("click", () => playBlob(pendingClip.blob));
+  $("#clipDel").addEventListener("click", () => { pendingClip = null; renderClip(); status(""); });
+}
+setMicUI();
 
 // ---------- PATTERNS (worked out on the phone, no AI) ----------
 const RISK_WORDS = ["faint","fainted","collapse","collapsed","chest pain","palpitation","dizzy","self-harm","self harm","cut herself","cut himself","cutting","hurt herself","hurt himself","suicid","vomit","sick after","threw up","blood"];
@@ -422,7 +560,8 @@ $("#askClaudeReview").addEventListener("click", async () => {
     "Diary:", ...lines
   ].join("\n");
   const ok = await copyText(req);
-  $("#reviewStatus").innerHTML = ok ? 'Your notes have been copied. <a href="https://claude.ai/new" target="_blank" rel="noopener">Open Claude</a>, paste them into a new chat and send.' : "Couldn't copy automatically. Please try again.";
+  openClaude(req);
+  $("#reviewStatus").textContent = ok ? "Claude is opening with your notes. Just tap send. If the message box is empty, tap it and choose Paste." : "Claude is opening with your notes. Just tap send.";
 });
 
 // ---------- CHECKS ----------
