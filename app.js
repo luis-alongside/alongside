@@ -164,49 +164,118 @@ $("#importFile").addEventListener("change", async e => {
 });
 
 // ---------- MEALS ----------
+// Menus come from the built-in planner (meals.js). It learns from this family:
+// meals eaten well in the diary, and meals marked 👍, come up more; 👎 and struggles come up less.
 $("#menuDate").value = TODAY;
-$("#menuDate").addEventListener("change", renderMenu);
-let swapSalt = 0;
+$("#menuDate").addEventListener("change", () => { renderMenu(); $("#shopOut").hidden = true; });
+let swapSalt = Math.floor(Math.random() * 1000);
+S.ratings = S.ratings || {};
+const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+const mainName = title => String(title || "").split(" + ")[0];
 function recentTitles(date){
-  return Object.values(S.days).filter(d => d.menu && d.date !== date && d.date >= localDate(new Date(Date.now() - 3*86400000)))
-    .flatMap(d => (d.menu.meals || []).map(m => m.title));
+  const since = localDate(new Date(Date.now() - 4*86400000));
+  return Object.values(S.days).filter(d => d.menu && d.date !== date && d.date >= since).flatMap(d => (d.menu.meals || []).map(m => m.title));
+}
+function mealHistory(){
+  const acc = {};
+  const add = (name, v, w) => { const a = acc[name] = acc[name] || { t: 0, w: 0 }; a.t += v * w; a.w += w; };
+  const since = localDate(new Date(Date.now() - 60*86400000));
+  Object.values(S.days).forEach(d => {
+    if (!d.menu || d.date < since) return;
+    (d.logs || []).forEach(l => {
+      if (!(l.eaten in EATEN_SCORE)) return;
+      const m = (d.menu.meals || []).find(x => x.slot === l.slot); if (!m) return;
+      const v = EATEN_SCORE[l.eaten] * 2 - 1 - (l.distress >= 4 ? 0.3 : 0);
+      m.title.split(" + ").forEach((part, i) => add(i ? cap(part) : part, v, i ? 0.5 : 1));
+    });
+  });
+  Object.entries(S.ratings).forEach(([name, v]) => add(name, v, 2));
+  const out = {}; Object.entries(acc).forEach(([k, a]) => out[k] = Math.max(-1, Math.min(1, a.t / a.w)));
+  return out;
+}
+function needProfile(){
+  if (S.profile) return true;
+  $("#menuStatus").innerHTML = 'First <a href="#profile" data-go="profile">set up your child\'s profile</a> so menus fit them.';
+  return false;
 }
 $("#genMenu").addEventListener("click", () => {
-  if (!S.profile){ $("#menuStatus").innerHTML = 'First <a href="#profile" data-go="profile">set up your child\'s profile</a> so menus fit them.'; return; }
+  if (!needProfile()) return;
   const date = $("#menuDate").value || TODAY;
   swapSalt++;
-  const m = AlongsidePlanner.plan(date, slots(), S.profile, recentTitles(date), swapSalt);
+  const m = AlongsidePlanner.plan(date, slots(), S.profile, recentTitles(date), swapSalt, mealHistory());
   if (!m.meals.length){ $("#menuStatus").textContent = "No meals fit the profile's allergies and diet. Try loosening them."; return; }
   day(date).menu = m; save();
   $("#menuStatus").textContent = "Menu ready. Check it against your team's plan.";
   renderMenu(); renderToday();
 });
+$("#genWeek").addEventListener("click", () => {
+  if (!needProfile()) return;
+  const start = $("#menuDate").value || TODAY;
+  swapSalt++;
+  const week = AlongsidePlanner.planWeek(start, 7, slots(), S.profile, recentTitles(start), swapSalt, mealHistory());
+  week.forEach(w => { if (w.menu.meals.length) day(w.date).menu = w.menu; });
+  save();
+  $("#menuStatus").textContent = "Menus made for 7 days from " + fmtDate(start, {weekday:"long", day:"numeric", month:"short"}) + ". Change the Day above to see each one.";
+  renderMenu(); renderToday(); renderShopping(start);
+});
+$("#genShop").addEventListener("click", () => renderShopping($("#menuDate").value || TODAY));
+function weekMenus(start){
+  const d0 = new Date(start + "T12:00:00"); const out = [];
+  for (let i = 0; i < 7; i++){ const iso = localDate(new Date(d0.getTime() + i*86400000)); const d = S.days[iso]; if (d && d.menu) out.push(d.menu); }
+  return out;
+}
+let shopText = "";
+function renderShopping(start){
+  const menus = weekMenus(start); const box = $("#shopOut");
+  box.hidden = false;
+  if (!menus.length){ box.innerHTML = '<h3>Shopping list</h3><p class="muted small" style="margin:0">No menus yet for the 7 days from this date. Tap "Plan the whole week" first.</p>'; return; }
+  const list = AlongsidePlanner.shoppingList(menus);
+  shopText = "Alongside shopping list (" + menus.length + " days from " + fmtDate(start, {day:"numeric", month:"short"}) + ")\n" + list.map(i => "- " + i.food + (i.times > 1 ? " (x" + i.times + ")" : "")).join("\n") + "\n\nBuy full-fat versions: whole milk, full-fat yoghurt, real butter.";
+  box.innerHTML = '<h3>Shopping list</h3><p class="small muted" style="margin-top:0">For ' + menus.length + ' day' + (menus.length > 1 ? 's' : '') + ' from ' + esc(fmtDate(start, {weekday:"long", day:"numeric", month:"short"})) + '. Buy full-fat versions.</p>' +
+    '<div class="shop">' + list.map((i, n) => '<label class="check"><input type="checkbox" id="sh' + n + '"><span>' + esc(i.food) + (i.times > 1 ? ' <span class="muted small">×' + i.times + '</span>' : '') + '</span></label>').join("") + '</div>' +
+    '<div class="btns"><button class="btn small" id="shareShop">Share list</button></div><div class="status" id="shopStatus"></div>';
+  $("#shareShop").addEventListener("click", async () => {
+    if (navigator.share){ try { await navigator.share({ title: "Shopping list", text: shopText }); return; } catch(e){ if (e && e.name === "AbortError") return; } }
+    $("#shopStatus").textContent = (await copyText(shopText)) ? "List copied. Paste it into Notes or a message." : "Couldn't share the list.";
+  });
+}
 function swapMeal(date, slot){
   const d = S.days[date]; if (!d || !d.menu) return;
   swapSalt++;
-  const m = AlongsidePlanner.swapOne(date, slot, S.profile || {}, d.menu, swapSalt);
+  const m = AlongsidePlanner.swapOne(date, slot, S.profile || {}, d.menu, swapSalt, mealHistory());
   if (m){ d.menu.meals = d.menu.meals.map(x => x.slot === slot ? m : x); save(); renderMenu(); renderToday(); }
+}
+function rateMeal(title, v){
+  const name = mainName(title);
+  if (S.ratings[name] === v) delete S.ratings[name]; else S.ratings[name] = v;
+  save(); renderMenu();
 }
 function renderMenu(){
   const date = $("#menuDate").value || TODAY; const d = S.days[date];
   const out = $("#menuOut");
   if (!d || !d.menu || !d.menu.meals || !d.menu.meals.length){
-    out.innerHTML = '<div class="card"><p class="muted" style="margin:0">No menu for ' + esc(fmtDate(date, {weekday:"long", day:"numeric", month:"long"})) + ' yet. ' + (S.profile ? 'Tap "Make a menu for this day".' : 'Set up the child profile first, then make a menu.') + '</p></div>';
+    out.innerHTML = '<div class="card"><p class="muted" style="margin:0">No menu for ' + esc(fmtDate(date, {weekday:"long", day:"numeric", month:"long"})) + ' yet. ' + (S.profile ? 'Tap "Make a menu for this day" or "Plan the whole week".' : 'Set up the child profile first, then make a menu.') + '</p></div>';
     $("#genMenu").textContent = "Make a menu for this day"; return;
   }
   $("#genMenu").textContent = "Make a different menu";
   const level = PORTION_TEXT[(S.profile && S.profile.portion) || "1"] || "";
-  out.innerHTML = (level ? '<div class="banner">' + esc(level) + '</div>' : '') + d.menu.meals.map((m, i) =>
-    '<div class="card meal"><h3><span>' + esc(m.slot) + '</span><span class="pill">' + esc(m.title) + '</span></h3>' +
-    '<ul class="items">' + (m.items || []).map(it => '<li><span>' + esc(it.food) + '</span><span>' + esc(it.portion) + '</span></li>').join("") + '</ul>' +
-    (m.recipe && m.recipe.length ? '<details style="margin:8px 0 0"><summary>Recipe</summary><div class="body"><ol>' + m.recipe.map(s => '<li>' + esc(s) + '</li>').join("") + '</ol></div></details>' : '') +
-    (m.tip ? '<p class="small muted" style="margin:8px 0 0">' + esc(m.tip) + '</p>' : '') +
-    '<div class="btns"><button class="btn ghost small" data-swap="' + i + '">Swap this</button></div></div>'
-  ).join("") + (d.menu.source === "claude" ? '<p class="small muted">This menu was written by Claude. Check it against your team\'s plan.</p>' : '');
+  out.innerHTML = (level ? '<div class="banner">' + esc(level) + '</div>' : '') + d.menu.meals.map((m, i) => {
+    const r = S.ratings[mainName(m.title)];
+    return '<div class="card meal"><h3><span>' + esc(m.slot) + '</span><span class="pill">' + esc(m.title) + '</span></h3>' +
+      (m.reasons && m.reasons.length ? '<div class="reasons">' + m.reasons.map(x => '<span class="reason">' + esc(x) + '</span>').join("") + '</div>' : '') +
+      '<ul class="items">' + (m.items || []).map(it => '<li><span>' + esc(it.food) + '</span><span>' + esc(it.portion) + '</span></li>').join("") + '</ul>' +
+      (m.recipe && m.recipe.length ? '<details style="margin:8px 0 0"><summary>Recipe</summary><div class="body"><ol>' + m.recipe.map(s => '<li>' + esc(s) + '</li>').join("") + '</ol></div></details>' : '') +
+      (m.tip ? '<p class="small muted" style="margin:8px 0 0">' + esc(m.tip) + '</p>' : '') +
+      '<div class="btns"><button class="btn ghost small" data-swap="' + i + '">Swap this</button>' +
+      (aiOn() ? '<button class="btn ghost small" data-aiswap="' + i + '">✨ New idea from Claude</button>' : '') +
+      '<button class="chip" data-rate="1" data-i="' + i + '" aria-pressed="' + (r === 1) + '">👍 Went well</button>' +
+      '<button class="chip" data-rate="-1" data-i="' + i + '" aria-pressed="' + (r === -1) + '">👎 Struggled</button></div></div>';
+  }).join("");
   out.querySelectorAll("[data-swap]").forEach(b => b.addEventListener("click", () => swapMeal(date, d.menu.meals[+b.dataset.swap].slot)));
+  out.querySelectorAll("[data-aiswap]").forEach(b => b.addEventListener("click", () => aiSwapMeal(date, d.menu.meals[+b.dataset.aiswap].slot, b)));
+  out.querySelectorAll("[data-rate]").forEach(b => b.addEventListener("click", () => rateMeal(d.menu.meals[+b.dataset.i].title, +b.dataset.rate)));
 }
 
-// "Ask Claude": copy a ready-made request, open Claude, paste the answer back.
 async function copyText(t){
   try { await navigator.clipboard.writeText(t); return true; }
   catch(e){
@@ -215,75 +284,94 @@ async function copyText(t){
     ta.remove(); return ok;
   }
 }
-function claudeMenuRequest(date){
-  const p = S.profile || {};
-  const level = { "1": "standard starting portions", "1.25": "about a quarter more than standard", "1.5": "about half as much again as standard", "2": "about double standard" }[p.portion || "1"];
-  return [
-    "I'm a parent feeding my child at home during family-based treatment (FBT) for anorexia nervosa. Please write a one-day menu for " + fmtDate(date, {weekday:"long"}) + " with these slots in order: " + slots().join(", ") + ".",
-    "Child's age: " + (p.age || "not given") + ". Foods they like: " + (p.likes || "not given") + ".",
-    "Foods the illness avoids (include at most ONE, small, alongside a liked food): " + (p.fear || "none") + ".",
-    "Never use: " + (p.allergy || "nothing") + ". Family diet: " + (p.diet || "no restriction") + ".",
-    "Portions: " + level + ". Treatment team instructions (follow exactly): " + (p.plan || "none") + ".",
-    "Rules: full-fat versions only (no light, diet, low-fat or sugar-free); carbohydrate about half of each main meal; dessert after lunch and dinner; each snack has two items; portions in household measures; never mention calories, weight or 'healthy'; simple recipes (max 6 steps).",
-    'Reply with ONLY this JSON and nothing else: {"meals":[{"slot":"Breakfast","title":"dish name","items":[{"food":"...","portion":"..."}],"recipe":["step"],"tip":"one short tip for the parent"}]}'
-  ].join("\n");
-}
-// Open Claude with the request already filled in (and copied too, in case Claude opens empty).
-function openClaude(text){
-  const a = document.createElement("a");
-  a.href = "https://claude.ai/new?q=" + encodeURIComponent(text.slice(0, 7000));
-  a.target = "_blank"; a.rel = "noopener";
-  document.body.appendChild(a); a.click(); a.remove();
-}
-let pendingMenuReq = null;
-$("#askClaudeMenu").addEventListener("click", async () => {
-  if (!S.profile){ $("#menuStatus").innerHTML = 'First <a href="#profile" data-go="profile">set up your child\'s profile</a>.'; return; }
-  pendingMenuReq = claudeMenuRequest($("#menuDate").value || TODAY);
-  await copyText(pendingMenuReq);
-  $("#pasteBox").hidden = false; $("#pasteText").value = ""; $("#pasteStatus").textContent = "";
-  $("#menuStatus").textContent = "";
-  openClaude(pendingMenuReq);
-});
-$("#reopenClaude").addEventListener("click", async () => { if (pendingMenuReq){ await copyText(pendingMenuReq); openClaude(pendingMenuReq); } });
-$("#cancelPaste").addEventListener("click", () => { $("#pasteBox").hidden = true; pendingMenuReq = null; });
-// When you come back to Alongside from Claude, point straight at the button.
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible" && !$("#pasteBox").hidden){
-    go("meals"); setTimeout(() => $("#pasteBox").scrollIntoView({ block: "start" }), 50);
-    $("#pasteStatus").textContent = "Welcome back. If you've copied Claude's answer, tap Use Claude's answer.";
+// ---------- CLAUDE (optional, with the parent's own API key; see ai.js) ----------
+const AI = () => window.AlongsideAI;
+const aiOn = () => !!(AI() && AI().hasKey());
+function refreshAIUI(){
+  const on = aiOn();
+  $("#aiMenuRow").hidden = !on; $("#aiHintMeals").hidden = on; $("#aiReview").hidden = !on;
+  const sel = $("#aiModel");
+  if (AI()){
+    if (!sel.options.length) sel.innerHTML = Object.entries(AI().MODELS).map(([id, label]) => '<option value="' + esc(id) + '">' + esc(label) + '</option>').join("");
+    sel.value = AI().getModel();
+    $("#aiKey").placeholder = on ? "Key saved (ending " + AI().getKey().slice(-4) + "). Paste a new one to replace it." : "sk-ant-…";
   }
-});
-function parseLooseJSON(t){
-  t = String(t || "").trim();
-  const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/i); if (fence) t = fence[1];
-  const a = t.indexOf("{"), b = t.lastIndexOf("}");
-  if (a < 0 || b <= a) throw new Error("no json");
-  return JSON.parse(t.slice(a, b + 1));
+  renderMenu();
 }
-$("#useClipboard").addEventListener("click", async () => {
-  let text = "";
-  try { text = await navigator.clipboard.readText(); }
-  catch(e){ $("#pasteStatus").textContent = "Your phone didn't let Alongside read the copied answer. Open \"Paste it myself instead\" below."; return; }
-  if (!applyClaudeMenu(text)) $("#pasteStatus").textContent = "The copied text isn't Claude's menu yet. In Claude, tap Copy under its answer, then try again.";
+window.addEventListener("alongside-ai-ready", refreshAIUI);
+$("#aiSave").addEventListener("click", async () => {
+  if (!AI()){ $("#aiStatus").textContent = "The Claude features couldn't load. Check your internet connection, then close and reopen Alongside."; return; }
+  const k = $("#aiKey").value.trim();
+  if (k && !/^sk-ant-/.test(k)){ $("#aiStatus").textContent = "That doesn't look like a Claude API key. It should start with sk-ant-."; return; }
+  if (k) AI().setKey(k);
+  AI().setModel($("#aiModel").value);
+  $("#aiKey").value = "";
+  if (!AI().hasKey()){ $("#aiStatus").textContent = "Paste your API key first."; return; }
+  $("#aiStatus").textContent = "Checking your key with Claude…";
+  try { await AI().testKey(); $("#aiStatus").textContent = "Connected. Claude's menus and diary reviews are now switched on."; }
+  catch(e){ $("#aiStatus").textContent = e.message; }
+  refreshAIUI();
 });
-$("#usePaste").addEventListener("click", () => {
-  if (!applyClaudeMenu($("#pasteText").value)) $("#pasteStatus").textContent = "That doesn't look like Claude's menu answer. Copy the whole reply and try again.";
+$("#aiRemove").addEventListener("click", () => {
+  if (AI()) AI().setKey("");
+  $("#aiKey").value = ""; $("#aiStatus").textContent = "Key removed from this phone. Claude features are off.";
+  refreshAIUI();
 });
-function applyClaudeMenu(text){
+
+// What has gone well or been hard recently, in plain words, for Claude to adapt to.
+function wentText(){
+  const h = mealHistory();
+  const good = Object.entries(h).filter(([, v]) => v >= 0.4).map(([k]) => k).slice(0, 8);
+  const hard = Object.entries(h).filter(([, v]) => v <= -0.2).map(([k]) => k).slice(0, 8);
+  const logs = allLogs(14);
+  const tagCount = {}; logs.forEach(l => (l.tags || []).forEach(t => tagCount[t] = (tagCount[t] || 0) + 1));
+  const tags = Object.entries(tagCount).sort((a,b) => b[1] - a[1]).slice(0, 4).map(([t, c]) => t + " (" + c + "x)");
+  const notes = logs.filter(l => l.notes).slice(0, 6).map(l => l.slot + ": " + l.notes.replace(/\s+/g, " ").slice(0, 160));
+  return [
+    good.length ? "Went well: " + good.join("; ") + "." : "",
+    hard.length ? "Was hard: " + hard.join("; ") + "." : "",
+    tags.length ? "Often noticed at meals: " + tags.join(", ") + "." : "",
+    notes.length ? "Recent parent notes:\n- " + notes.join("\n- ") : ""
+  ].filter(Boolean).join("\n");
+}
+// Put Claude's meals in this family's slot order, using the slot names the app uses.
+function alignSlots(meals){
+  const ss = slots(); const used = new Set();
+  return ss.map((slot, i) => {
+    let m = meals.find((x, j) => !used.has(j) && x.slot.toLowerCase() === slot.toLowerCase());
+    if (!m) m = meals.find((x, j) => !used.has(j) && j === i);
+    if (!m) return null;
+    used.add(meals.indexOf(m));
+    return Object.assign({}, m, { slot });
+  }).filter(Boolean);
+}
+let aiCtl = null;
+function aiBusy(on){ $("#aiMenu").disabled = on; $("#aiStop").hidden = !on; $("#genMenu").disabled = on; $("#genWeek").disabled = on; }
+$("#aiMenu").addEventListener("click", async () => {
+  if (!needProfile() || !aiOn()) return;
+  const date = $("#menuDate").value || TODAY;
+  aiCtl = new AbortController(); aiBusy(true);
+  $("#menuStatus").textContent = "Claude is writing a menu for your child. This usually takes 20–60 seconds…";
   try {
-    const r = parseLooseJSON(text);
-    const meals = (Array.isArray(r.meals) ? r.meals : []).filter(m => m && typeof m === "object").slice(0, 8).map(m => ({
-      slot: String(m.slot || ""), title: String(m.title || ""),
-      items: (Array.isArray(m.items) ? m.items : []).slice(0, 12).map(i => ({ food: String(i && i.food || ""), portion: String(i && i.portion || "") })),
-      recipe: (Array.isArray(m.recipe) ? m.recipe : []).slice(0, 10).map(String), tip: String(m.tip || ""), source: "claude"
-    }));
-    if (!meals.length) throw new Error("empty");
-    const date = $("#menuDate").value || TODAY;
-    day(date).menu = { meals, made: new Date().toISOString(), source: "claude" }; save();
-    $("#pasteBox").hidden = true; pendingMenuReq = null; $("#menuStatus").textContent = "Claude's menu saved.";
+    const meals = await AI().makeMenu({ profile: S.profile, slots: slots(), dateLabel: fmtDate(date, {weekday:"long", day:"numeric", month:"long"}), went: wentText(), recent: recentTitles(date), signal: aiCtl.signal });
+    const aligned = alignSlots(meals);
+    if (!aligned.length) throw new Error("Claude's answer didn't include the day's meals. Please try again.");
+    day(date).menu = { meals: aligned, made: new Date().toISOString(), source: "claude" }; save();
+    $("#menuStatus").textContent = "Claude's menu is ready. Check it against your team's plan.";
     renderMenu(); renderToday();
-    return true;
-  } catch(e){ return false; }
+  } catch(e){ $("#menuStatus").textContent = e.message; }
+  finally { aiBusy(false); aiCtl = null; }
+});
+$("#aiStop").addEventListener("click", () => aiCtl && aiCtl.abort());
+async function aiSwapMeal(date, slot, btn){
+  const d = S.days[date]; if (!d || !d.menu || !aiOn()) return;
+  const cur = d.menu.meals.find(m => m.slot === slot);
+  btn.disabled = true; btn.textContent = "Claude is thinking…";
+  try {
+    const meals = await AI().makeMenu({ profile: S.profile, slots: slots(), dateLabel: fmtDate(date, {weekday:"long", day:"numeric", month:"long"}), went: wentText(), recent: recentTitles(date).concat(d.menu.meals.map(m => m.title)), onlySlot: slot, avoidTitle: cur ? cur.title : "" });
+    const m = meals[0];
+    if (m){ m.slot = slot; d.menu.meals = d.menu.meals.map(x => x.slot === slot ? m : x); save(); renderMenu(); renderToday(); }
+  } catch(e){ btn.disabled = false; btn.textContent = "✨ New idea from Claude"; $("#menuStatus").textContent = e.message; }
 }
 
 // ---------- DIARY ----------
@@ -547,22 +635,32 @@ function renderInsight(){
     sec("What we noticed", i.patterns.length ? i.patterns : ["No strong patterns yet. Keep adding notes."]) + sec("Ideas to try", i.ideas) + sec("Questions for your team", i.ask) +
     '<p class="small muted">Based on ' + i.count + ' notes from the last 2 weeks, worked out on this phone.</p>';
 }
-$("#askClaudeReview").addEventListener("click", async () => {
+let revCtl = null;
+$("#aiReview").addEventListener("click", async () => {
+  if (!aiOn()) return;
   const logs = allLogs(14);
   if (logs.length < 3){ $("#reviewStatus").textContent = "Save at least 3 meal notes first."; return; }
-  const p = S.profile || {};
   const lines = logs.slice(0, 60).map(l => l.date + " " + l.slot + ": eaten " + (l.eaten || "?") + ", distress " + l.distress + "/5" + (l.minutes ? ", " + l.minutes + " min" : "") + (l.tags && l.tags.length ? ", noticed: " + l.tags.join("; ") : "") + (l.notes ? ". Note: " + l.notes.replace(/\s+/g, " ").slice(0, 300) : ""));
-  const req = [
-    "I'm a parent doing family-based treatment (FBT) at home for my child with anorexia nervosa. Please review my meal diary from the last 2 weeks and give kind, practical, evidence-based suggestions.",
-    "Child's age: " + (p.age || "not given") + ". Likes: " + (p.likes || "-") + ". Team instructions: " + (p.plan || "-") + ".",
-    "Rules: never suggest less food, skipping meals, lighter foods or more exercise; never set weight targets; don't contradict the treatment team; if anything sounds medically risky, tell me to contact the team or emergency services.",
-    "Please give: a 2-sentence summary, patterns you notice, meal ideas, mealtime ideas, and questions to take to our next appointment.",
-    "Diary:", ...lines
-  ].join("\n");
-  const ok = await copyText(req);
-  openClaude(req);
-  $("#reviewStatus").textContent = ok ? "Claude is opening with your notes. Just tap send. If the message box is empty, tap it and choose Paste." : "Claude is opening with your notes. Just tap send.";
+  const checks = S.vitals.slice().sort((a,b) => (a.date + a.at).localeCompare(b.date + b.at)).slice(-6).map(v => v.date + ": pulse " + (v.pulse ?? "-") + ", BP " + (v.sys ?? "-") + "/" + (v.dia ?? "-")).join("; ");
+  revCtl = new AbortController();
+  $("#aiReview").disabled = true; $("#aiReviewStop").hidden = false;
+  $("#reviewStatus").textContent = "Claude is reading your notes. This usually takes 20–60 seconds…";
+  try {
+    S.aiReview = await AI().reviewNotes({ profile: S.profile || {}, slots: slots(), lines, checks, signal: revCtl.signal });
+    save(); $("#reviewStatus").textContent = ""; renderAIReview();
+  } catch(e){ $("#reviewStatus").textContent = e.message; }
+  finally { $("#aiReview").disabled = false; $("#aiReviewStop").hidden = true; revCtl = null; }
 });
+$("#aiReviewStop").addEventListener("click", () => revCtl && revCtl.abort());
+function renderAIReview(){
+  const i = S.aiReview; const out = $("#aiReviewOut");
+  if (!i){ out.innerHTML = ""; return; }
+  const sec = (t, a) => a && a.length ? '<h4 style="margin:12px 0 4px">' + esc(t) + '</h4><ul>' + a.map(x => '<li>' + esc(x) + '</li>').join("") + '</ul>' : '';
+  out.innerHTML = '<div class="card accent" style="margin:12px 0 0"><span class="tag">Claude\'s review · ' + esc(fmtDate(String(i.at).slice(0,10))) + '</span>' +
+    (i.urgent ? '<div class="card danger" style="margin:8px 0"><span class="tag danger">Please act on this</span><p>' + esc(i.urgentReason || "Something in your notes may need medical attention.") + ' Contact your team today, or call 999 in an emergency.</p></div>' : '') +
+    '<p>' + esc(i.summary) + '</p>' + sec("Patterns", i.patterns) + sec("Meal ideas", i.mealIdeas) + sec("Mealtime ideas", i.mealtimeIdeas) + sec("Questions for your team", i.askTeam) +
+    '<p class="small muted" style="margin-bottom:0">Written by Claude. Check suggestions with your treatment team.</p></div>';
+}
 
 // ---------- CHECKS ----------
 $("#vDate").value = TODAY;
@@ -650,8 +748,9 @@ async function fetchNews(){
 })();
 
 // ---------- boot ----------
-function renderAll(){ renderToday(); renderProfile(); renderLogForm(); renderLogList(); renderInsight(); renderMenu(); renderVitals(); renderNews(); }
+function renderAll(){ renderToday(); renderProfile(); renderLogForm(); renderLogList(); renderInsight(); renderMenu(); renderVitals(); renderNews(); renderAIReview(); }
 renderAll();
+if (window.AlongsideAI) refreshAIUI();
 const h = location.hash.slice(1); if (h) go(h);
 fetchNews();
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});

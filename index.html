@@ -71,39 +71,28 @@
 <!-- ================= MEALS ================= -->
 <section id="meals">
   <h2>Menus and recipes</h2>
-  <p class="lead">A day of meals and snacks built around what your child likes, with portions and simple recipes. Your treatment team's plan always comes first.</p>
+  <p class="lead">Meals and snacks built around what your child likes, with portions and simple recipes. Alongside learns from your diary and your 👍 / 👎, so menus fit your child better over time. Your treatment team's plan always comes first.</p>
 
   <div class="card">
     <label class="f" for="menuDate">Day</label>
     <input type="date" id="menuDate">
+    <div class="btns" id="aiMenuRow" hidden>
+      <button class="btn" id="aiMenu">✨ Claude's menu for this day</button>
+      <button class="btn ghost" id="aiStop" hidden>Stop</button>
+    </div>
     <div class="btns">
       <button class="btn" id="genMenu">Make a menu for this day</button>
-      <button class="btn ghost" id="askClaudeMenu">Ask Claude for ideas</button>
+      <button class="btn ghost" id="genWeek">Plan the whole week</button>
+      <button class="btn ghost" id="genShop">Shopping list</button>
     </div>
     <div class="status" id="menuStatus"></div>
   </div>
 
-  <div class="card accent" id="pasteBox" hidden>
-    <span class="tag">Waiting for Claude</span>
-    <ol class="small">
-      <li>In Claude, <b>send</b> the request. If the message box is empty, tap it and choose <b>Paste</b>.</li>
-      <li>When Claude answers, tap <b>Copy</b> under its answer.</li>
-      <li>Come back here and tap <b>Use Claude's answer</b>.</li>
-    </ol>
-    <div class="btns">
-      <button class="btn" id="useClipboard">Use Claude's answer</button>
-      <button class="btn ghost" id="reopenClaude">Open Claude again</button>
-      <button class="btn ghost" id="cancelPaste">Cancel</button>
-    </div>
-    <div class="status" id="pasteStatus"></div>
-    <details style="margin-top:10px"><summary>Paste it myself instead</summary><div class="body">
-      <label class="f" for="pasteText">Claude's answer</label>
-      <textarea id="pasteText" placeholder="Paste here…"></textarea>
-      <div class="btns"><button class="btn small" id="usePaste">Use this menu</button></div>
-    </div></details>
-  </div>
+  <div class="card" id="shopOut" hidden></div>
 
   <div id="menuOut"></div>
+
+  <p class="small muted" id="aiHintMeals">Want Claude to write menus and recipes for your child? <a href="#profile" data-go="profile">Add your Claude API key</a> on the profile page.</p>
 
   <details><summary>Typical starting portions</summary><div class="body">
     <p class="small muted">Typical starting amounts used by UK eating disorder services. Many children need more than this during recovery. Your team will tell you what your child needs.</p>
@@ -150,8 +139,9 @@
   <div class="card">
     <h3>Patterns from the last 2 weeks</h3>
     <div id="insightOut"><p class="muted small" style="margin:0">Save a few meal notes and patterns will appear here.</p></div>
-    <div class="btns"><button class="btn ghost small" id="askClaudeReview">Ask Claude to review my notes</button></div>
+    <div class="btns"><button class="btn small" id="aiReview" hidden>✨ Review my notes with Claude</button><button class="btn ghost small" id="aiReviewStop" hidden>Stop</button></div>
     <div class="status" id="reviewStatus"></div>
+    <div id="aiReviewOut"></div>
   </div>
 
   <div class="card">
@@ -288,6 +278,21 @@
     <div class="status" id="pStatus"></div>
   </div>
 
+  <div class="card" id="aiCard">
+    <h3>Claude AI menus and advice <small class="muted">(optional)</small></h3>
+    <p class="small muted" style="margin-top:0">With your own Claude API key, Claude writes menus and recipes for your child and reviews your meal diary, right inside Alongside. You pay Anthropic directly for what you use, typically a few pence per menu. Get a key at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.</p>
+    <label class="f" for="aiKey">Your Claude API key</label>
+    <input type="password" id="aiKey" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-ant-…">
+    <label class="f" for="aiModel">Claude model</label>
+    <select id="aiModel"></select>
+    <div class="btns">
+      <button class="btn small" id="aiSave">Save and test</button>
+      <button class="btn ghost small" id="aiRemove">Remove key</button>
+    </div>
+    <div class="status" id="aiStatus"></div>
+    <p class="small muted">The key is kept only on this phone and isn't included in backups. When you use a Claude feature, your child's profile (not their name) and recent diary notes are sent to Anthropic to write the answer.</p>
+  </div>
+
   <div class="card">
     <h3>Your data</h3>
     <p class="small muted" style="margin-top:0">Everything you enter stays on this phone. Nothing is sent anywhere. Make a backup now and then, so you can restore it if you change phones. Recorded voice messages stay on this phone and aren't included in backups.</p>
@@ -345,5 +350,6 @@
 
 <script src="meals.js"></script>
 <script src="app.js"></script>
+<script type="module" src="ai.js"></script>
 </body>
 </html>

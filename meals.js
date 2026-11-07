@@ -148,9 +148,75 @@ const MEAL_LIBRARY = {
     { name: "Dried fruit and nut mix with milk", keys: ["dried fruit","raisins","nuts","milk"], tags: ["nuts","dairy"], items: [["Dried fruit and nuts","1 handful"],["Whole milk","1 glass"]] },
     { name: "Cake slice and milk", keys: ["cake","milk"], tags: ["dairy","gluten","egg"], items: [["Cake","1 slice"],["Whole milk","1 glass"]] },
     { name: "Ice cream cone", keys: ["ice cream"], tags: ["dairy","gluten"], items: [["Ice cream in a cone","2 scoops"]] },
-    { name: "Bedtime toast and milk", keys: ["toast","milk","jam","bedtime"], tags: ["dairy","gluten"], items: [["Toast with butter and jam","2 slices"],["Milk","200 ml"]] }
+    { name: "Bedtime toast and milk", keys: ["toast","milk","jam","bedtime"], tags: ["dairy","gluten"], items: [["Toast with butter and jam","2 slices"],["Milk","200 ml"]] },
+    { name: "Mini ham bocadillo", keys: ["ham","jamón","bread","bocadillo","spanish","sandwich"], tags: ["pork","meat","gluten"], items: [["Small baguette roll with olive oil and ham","1"],["Juice","1 glass"]] },
+    { name: "Cottage cheese with fruit and honey", keys: ["cottage cheese","fruit","honey"], tags: ["dairy"], items: [["Full-fat cottage cheese","4 tablespoons"],["Fruit pieces","1 handful"],["Honey","1 teaspoon"],["Biscuit","1"]] },
+    { name: "Muffin and milk", keys: ["muffin","cake","milk"], tags: ["dairy","gluten","egg"], items: [["Muffin","1 regular"],["Whole milk","1 glass"]] },
+    { name: "Flapjack and yoghurt drink", keys: ["flapjack","oats","yoghurt","yogurt"], tags: ["dairy","gluten"], items: [["Flapjack","1 bar"],["Yoghurt drink","1 bottle"]] },
+    { name: "Half egg mayo sandwich", keys: ["egg","eggs","boiled egg","mayonnaise","sandwich","bread"], tags: ["egg","gluten"], items: [["Egg mayonnaise sandwich","½ sandwich (1 slice-worth)"],["Juice","1 glass"]] },
+    { name: "Cheese toastie triangles", keys: ["cheese","toast","toastie"], tags: ["dairy","gluten"], items: [["Cheese toastie","½ toastie"],["Grapes","1 handful"]] }
   ]
 };
+MEAL_LIBRARY.breakfast.push(
+  { name: "French toast with syrup", keys: ["french toast","eggy bread","egg","bread","syrup"], tags: ["egg","dairy","gluten"],
+    items: [["French toast (eggy bread)","2 slices"],["Maple syrup or honey","1 tablespoon"],["Whole milk","1 glass"]],
+    recipe: ["Whisk 1 egg with a splash of whole milk.","Dip bread slices, fry in butter 2 minutes each side.","Serve with syrup."] },
+  { name: "Crumpets with butter and a yoghurt", keys: ["crumpets","butter","yoghurt","yogurt"], tags: ["dairy","gluten"],
+    items: [["Crumpets with butter","2"],["Full-fat yoghurt","1 pot"],["Orange juice","1 glass"]], recipe: [] },
+  { name: "Avocado and egg on toast", keys: ["avocado","egg","eggs","toast"], tags: ["egg","gluten"],
+    items: [["Toast with butter","2 slices"],["Avocado, mashed with olive oil","½"],["Fried or poached egg","1"],["Whole milk","1 glass"]],
+    recipe: ["Toast and butter the bread.","Mash avocado with olive oil and salt, spread on toast.","Top with an egg."] },
+  { name: "Muesli with whole milk and a croissant", keys: ["muesli","cereal","croissant","milk"], tags: ["dairy","gluten","nuts"],
+    items: [["Muesli","1 mug"],["Whole milk","1 mug (200 ml)"],["Croissant with butter and jam","1"]], recipe: [] },
+  { name: "Ham and cheese bocadillo", keys: ["bocadillo","ham","jamón","cheese","bread","spanish"], tags: ["pork","meat","dairy","gluten"],
+    items: [["Baguette half with olive oil and tomato","1"],["Ham","3 slices"],["Cheese","2 slices"],["Café con leche or whole milk","1 mug"]], recipe: [] }
+);
+MEAL_LIBRARY.main.push(
+  { name: "Cottage pie", keys: ["cottage pie","shepherd's pie","mince","beef","mash","potato"], tags: ["meat","dairy"],
+    items: [["Cottage pie","1 large portion (2 serving spoons mince, 2 scoops mash)"],["Peas with butter","2 serving spoons"],["Bread and butter","1 slice"]],
+    recipe: ["Brown mince with onion and carrot in oil, add stock and simmer 20 minutes.","Top with mash made with butter and whole milk, then grated cheese.","Bake at 200°C for 25 minutes until golden."] },
+  { name: "Chicken korma with rice and naan", keys: ["curry","korma","chicken","rice","naan"], tags: ["meat","dairy","gluten","nuts"],
+    items: [["Chicken korma","1 breast's worth with sauce"],["Rice","4 heaped serving spoons"],["Naan bread","½"]],
+    recipe: ["Fry chicken pieces in oil.","Add korma sauce and a splash of cream, simmer 15 minutes.","Serve with rice and warm naan."] },
+  { name: "Tuna pasta bake", keys: ["tuna","pasta","cheese","sweetcorn"], tags: ["fish","dairy","gluten"],
+    items: [["Tuna pasta bake","4 heaped serving spoons"],["Garlic bread","1 slice"]],
+    recipe: ["Cook pasta.","Mix with tuna, sweetcorn and a cheese sauce made with whole milk.","Top with cheese and bake 20 minutes at 200°C."] },
+  { name: "Albóndigas with rice", keys: ["albondigas","meatballs","beef","tomato","rice","spanish"], tags: ["meat","gluten","egg"],
+    items: [["Meatballs in tomato sauce","5–6"],["Rice","4 heaped serving spoons"],["Bread","1 slice"]],
+    recipe: ["Mix mince with breadcrumbs, egg and garlic, roll into balls.","Fry until browned, then simmer in tomato sauce 20 minutes.","Serve with rice."] },
+  { name: "Croquetas with chips and salad", keys: ["croquetas","ham","chips","spanish"], tags: ["pork","meat","dairy","gluten","egg"],
+    items: [["Ham croquetas","6"],["Oven chips","15"],["Salad with olive oil","small bowl"],["Mayonnaise","1 tablespoon"]], recipe: ["Oven-cook or fry croquetas and chips per packet."] },
+  { name: "Ham and cheese quiche with potato salad", keys: ["quiche","ham","cheese","egg","potato"], tags: ["pork","meat","dairy","gluten","egg"],
+    items: [["Quiche","1 large slice (⅙ of a quiche)"],["Potato salad with mayonnaise","3 tablespoons"],["Coleslaw","2 tablespoons"]], recipe: [] },
+  { name: "Bean and cheese burrito bowl", keys: ["burrito","beans","rice","cheese","avocado","vegetarian"], tags: ["dairy"],
+    items: [["Rice","4 heaped serving spoons"],["Black beans","4 tablespoons"],["Grated cheese and soured cream","generous"],["Guacamole and tortilla chips","1 handful"]],
+    recipe: ["Warm rice and beans with a little cumin.","Top with cheese, soured cream, guacamole and chips."] },
+  { name: "Salmon teriyaki noodles", keys: ["salmon","fish","noodles","teriyaki"], tags: ["fish","gluten"],
+    items: [["Egg noodles","1 nest-and-a-half"],["Salmon fillet in teriyaki sauce","1"],["Stir-fried veg in oil","2 serving spoons"]],
+    recipe: ["Bake salmon with teriyaki sauce 15 minutes at 200°C.","Cook noodles, toss with oil and veg.","Serve salmon on top."] },
+  { name: "Chicken pesto pasta", keys: ["pesto","pasta","chicken","cheese"], tags: ["meat","dairy","gluten","nuts"],
+    items: [["Pasta","4 heaped serving spoons"],["Green pesto","2 tablespoons"],["Chicken pieces","1 breast"],["Parmesan","1 tablespoon"]],
+    recipe: ["Cook pasta.","Fry chicken in oil.","Toss pasta with pesto and chicken, top with parmesan."] },
+  { name: "Chickpea and potato curry with rice", keys: ["curry","chickpeas","potato","rice","vegetarian"], tags: ["dairy"],
+    items: [["Chickpea and potato curry made with coconut milk","1 bowl"],["Rice","4 heaped serving spoons"],["Yoghurt","2 tablespoons"]],
+    recipe: ["Fry onion, garlic and curry paste in oil.","Add diced potato, chickpeas and coconut milk, simmer 20 minutes.","Serve with rice and yoghurt."] },
+  { name: "Fish pie", keys: ["fish pie","fish","salmon","mash","potato"], tags: ["fish","dairy","gluten"],
+    items: [["Fish pie","1 large portion"],["Peas with butter","2 serving spoons"]], recipe: [] },
+  { name: "Falafel and hummus wrap", keys: ["falafel","hummus","wrap","vegetarian"], tags: ["gluten","dairy"],
+    items: [["Large wrap","1"],["Falafel","4"],["Hummus and tzatziki","3 tablespoons"],["Crisps","1 bag"]], recipe: [] },
+  { name: "Huevos rotos with ham", keys: ["huevos rotos","egg","eggs","chips","ham","jamón","spanish"], tags: ["egg","pork","meat"],
+    items: [["Chips or fried potatoes","15–20"],["Fried eggs","2"],["Ham (jamón)","3 slices"],["Bread","1 slice"]],
+    recipe: ["Cook chips or fry sliced potatoes in olive oil.","Fry eggs and lay them over the potatoes.","Top with ham and break the yolks over everything."] },
+  { name: "Beef lasagne", keys: ["lasagne","lasagna","beef","mince","pasta","cheese"], tags: ["meat","dairy","gluten"],
+    items: [["Beef lasagne","1 rectangle about 15 × 10 cm"],["Garlic bread","1 slice"],["Side salad with dressing","small bowl"]], recipe: [] }
+);
+MEAL_LIBRARY.dessert.push(
+  { name: "Chocolate mousse", keys: ["chocolate","mousse"], tags: ["dairy","egg"], items: [["Chocolate mousse","1 pot"],["Biscuit","1"]] },
+  { name: "Churros with chocolate", keys: ["churros","chocolate","spanish"], tags: ["gluten","dairy"], items: [["Churros","4"],["Hot chocolate for dipping","1 small cup"]] },
+  { name: "Banana with ice cream and sauce", keys: ["banana","ice cream","chocolate"], tags: ["dairy"], items: [["Banana","1"],["Ice cream","2 scoops"],["Chocolate or toffee sauce","1 tablespoon"]] },
+  { name: "Trifle", keys: ["trifle","custard","cream"], tags: ["dairy","gluten","egg"], items: [["Trifle","1 bowl"]] },
+  { name: "Cookies and milk", keys: ["cookies","biscuits","milk","chocolate"], tags: ["dairy","gluten"], items: [["Cookies","2"],["Whole milk","1 glass"]] }
+);
 
 // ---------- planner ----------
 const AlongsidePlanner = (() => {
@@ -171,29 +237,41 @@ const AlongsidePlanner = (() => {
     return true;
   }
 
-  // score: liked foods up, recent repeats down, feared foods handled separately
+  // score: liked foods up, family feedback up/down, recent repeats down, feared foods handled separately.
+  // history: { mealName: number from -1 (struggled) to +1 (went well) } learnt from the diary and 👍/👎.
   function pick(kind, p, ctx, r){
     const likes = words(p.likes), fear = words(p.fear);
     const pool = MEAL_LIBRARY[kind].filter(m => allowed(m, p) && !ctx.used.has(m.name));
     if (!pool.length) return null;
     const scored = pool.map(m => {
       const likedWords = matches(m, likes);
-      const feared = matches(m, fear).length;
+      const fearedWords = matches(m, fear);
+      const h = ctx.history[m.name];
       // liked foods count less each time they've already appeared today, for variety
-      let likeScore = likedWords.reduce((t, w) => t + 3 / (1 + (ctx.likeUse[w] || 0)), 0);
-      let s = 1 + likeScore + r() * 2.5;
+      const likeScore = likedWords.reduce((t, w) => t + 3 / (1 + (ctx.likeUse[w] || 0)), 0);
+      let s = 1 + likeScore + r() * 2.5 + (h ? h * 4 : 0);
       if (ctx.recent.has(m.name)) s -= 7;
-      if (feared){
+      if (fearedWords.length){
         // one gentle "feared food" step per day, only in a snack or dessert
         if (ctx.fearUsed || (kind !== "snack" && kind !== "dessert")) s -= 50; else s += 2.5;
       }
-      return { m, s, feared: feared > 0, liked: likedWords.length, likedWords };
+      return { m, s, feared: fearedWords.length > 0, fearedWords, liked: likedWords.length, likedWords, h: h || 0 };
     }).sort((a,b) => b.s - a.s);
     const best = scored[0];
     if (best.feared) ctx.fearUsed = true;
     best.likedWords.forEach(w => ctx.likeUse[w] = (ctx.likeUse[w] || 0) + 1);
     ctx.used.add(best.m.name);
     return best;
+  }
+
+  function reasonsFor(x){
+    const out = [];
+    if (!x) return out;
+    if (x.likedWords && x.likedWords.length) out.push("Uses foods they like: " + x.likedWords.join(", "));
+    if (x.h >= 0.5) out.push("Went well before");
+    else if (x.h > 0) out.push("Went fairly well before");
+    if (x.feared) out.push("Gentle step with a feared food: " + x.fearedWords.join(", "));
+    return out;
   }
 
   function mealFrom(slot, main, dessert, extra){
@@ -203,14 +281,15 @@ const AlongsidePlanner = (() => {
     let tip = "";
     if (main.feared || (dessert && dessert.feared)) tip = "This includes a food the illness finds hard. Serve it calmly alongside the rest, without comment. Tell your team how it went.";
     else if (main.liked) tip = "Built around foods your child likes, which can make this meal a little easier.";
-    return { slot, title: main.m.name + (dessert ? " + " + dessert.m.name.toLowerCase() : ""), items, recipe: (main.m.recipe || []).slice(), tip, source: "planner" };
+    const reasons = reasonsFor(main).concat(dessert ? reasonsFor(dessert).map(t => "Dessert: " + t.charAt(0).toLowerCase() + t.slice(1)) : []);
+    return { slot, title: main.m.name + (dessert ? " + " + dessert.m.name.toLowerCase() : ""), items, recipe: (main.m.recipe || []).slice(), tip, reasons, source: "planner" };
   }
 
-  // slots: array of slot names. recentTitles: titles from the last 3 days.
-  function plan(dateISO, slots, profile, recentTitles, salt){
+  // slots: array of slot names. recentTitles: titles from recent days. history: feedback map (see pick).
+  function plan(dateISO, slots, profile, recentTitles, salt, history){
     const p = profile || {};
     const r = rng(dateISO + "|" + (salt || 0) + "|" + (p.likes || ""));
-    const ctx = { used: new Set(), recent: new Set((recentTitles || []).map(t => String(t).split(" + ")[0])), fearUsed: false, likeUse: {} };
+    const ctx = { used: new Set(), recent: new Set((recentTitles || []).map(t => String(t).split(" + ")[0])), fearUsed: false, likeUse: {}, history: history || {} };
     const meals = [];
     for (const slot of slots){
       const s = slot.toLowerCase();
@@ -221,7 +300,7 @@ const AlongsidePlanner = (() => {
       }
       else if (s.includes("evening") || s.includes("bedtime")) {
         const bed = MEAL_LIBRARY.snack.find(x => x.name === "Bedtime toast and milk");
-        const sn = bed && allowed(bed, p) ? { m: bed, feared: false, liked: matches(bed, words(p.likes)).length } : pick("snack", p, ctx, r);
+        const sn = bed && allowed(bed, p) ? { m: bed, feared: false, fearedWords: [], liked: 0, likedWords: [], h: 0 } : pick("snack", p, ctx, r);
         if (sn) { ctx.used.add(sn.m.name); meals.push(mealFrom(slot, sn)); }
       }
       else { const sn = pick("snack", p, ctx, r); if (sn) meals.push(mealFrom(slot, sn)); }
@@ -229,10 +308,10 @@ const AlongsidePlanner = (() => {
     return { meals, made: new Date().toISOString(), source: "planner" };
   }
 
-  function swapOne(dateISO, slot, profile, current, salt){
+  function swapOne(dateISO, slot, profile, current, salt, history){
     const others = (current.meals || []).filter(m => m.slot !== slot).map(m => m.title);
     for (let i = 1; i < 12; i++){
-      const alt = plan(dateISO, [slot], profile, others.concat((current.meals || []).filter(m => m.slot === slot).map(m => m.title.split(" + ")[0])), (salt || 0) + i * 7);
+      const alt = plan(dateISO, [slot], profile, others.concat((current.meals || []).filter(m => m.slot === slot).map(m => m.title.split(" + ")[0])), (salt || 0) + i * 7, history);
       const m = alt.meals[0];
       const cur = (current.meals || []).find(x => x.slot === slot);
       if (m && (!cur || m.title !== cur.title)) return m;
@@ -240,5 +319,32 @@ const AlongsidePlanner = (() => {
     return null;
   }
 
-  return { plan, swapOne };
+  // a week of menus starting at startISO; each day avoids repeating the days before it
+  function planWeek(startISO, days, slots, profile, recentTitles, salt, history){
+    const out = []; let recent = (recentTitles || []).slice();
+    const d0 = new Date(startISO + "T12:00:00");
+    for (let i = 0; i < days; i++){
+      const d = new Date(d0.getTime() + i * 86400000);
+      const iso = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+      const m = plan(iso, slots, profile, recent.slice(-20), salt, history);
+      out.push({ date: iso, menu: m });
+      recent = recent.concat(m.meals.map(x => x.title));
+    }
+    return out;
+  }
+
+  // shopping list: every food item across the given menus, merged, with how many times it's needed
+  function shoppingList(menus){
+    const map = new Map();
+    menus.forEach(menu => (menu.meals || []).forEach(meal => (meal.items || []).forEach(it => {
+      const food = String(it.food || "").replace(/^(Dessert|Drink):\s*/i, "").trim();
+      if (!food) return;
+      const key = food.toLowerCase();
+      const e = map.get(key) || { food, times: 0 };
+      e.times++; map.set(key, e);
+    })));
+    return [...map.values()].sort((a,b) => a.food.localeCompare(b.food));
+  }
+
+  return { plan, swapOne, planWeek, shoppingList };
 })();

@@ -70,6 +70,10 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 .btn[disabled]{opacity:.55;cursor:default}
 .btn.danger-btn{background:var(--danger);color:#fff}
 .btn.recording{background:var(--danger);border-color:var(--danger);color:#fff}
+.reasons{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}
+.reason{font-size:12px;border-radius:999px;padding:2px 8px;background:var(--warm-soft);color:var(--ink)}
+.shop .check{padding:7px 0}
+.shop .check input:checked + span{text-decoration:line-through;color:var(--muted)}
 .linkbtn{background:none;border:0;padding:0;color:var(--accent);font:inherit;text-decoration:underline;cursor:pointer}
 .clip{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--accent-soft);border-radius:10px;padding:8px 10px;margin-top:10px}
 .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
