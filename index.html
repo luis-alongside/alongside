@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Alongside</title>
+<meta name="description" content="A free companion for parents supporting a child through anorexia recovery.">
+<meta name="theme-color" content="#2f7564">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Alongside">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="wrap">
+  <h1><span>Alongside</span></h1>
+  <div class="hbtns">
+    <button class="iconbtn" data-go="profile" aria-label="Child profile and settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg></button>
+    <button class="sos" data-go="urgent">Urgent help</button>
+  </div>
+</header>
+
+<main class="wrap">
+<div class="banner" id="installBanner" hidden></div>
+
+<!-- ================= TODAY ================= -->
+<section id="today" class="active">
+  <h2 id="hello">Today</h2>
+  <p class="lead" id="todayDate"></p>
+
+  <div class="card warm" id="setupCard" hidden>
+    <span class="tag warm">Start here</span>
+    <p>Tell Alongside about your child: what they like, what the treatment team has asked for, and the team's phone number. Menus, tips and alerts will then fit your family.</p>
+    <button class="btn" data-go="profile">Set up your child's profile</button>
+  </div>
+
+  <div class="card danger" id="vitalAlert" hidden></div>
+
+  <div class="card">
+    <h3>Today's eating</h3>
+    <p class="muted small" style="margin:0">Tick each meal and snack once it's done.</p>
+    <div class="progress"><div id="bar"></div></div>
+    <div id="checklist"></div>
+  </div>
+
+  <div class="card accent">
+    <span class="tag">Tip of the day</span>
+    <p id="tipText" style="margin:0"></p>
+  </div>
+
+  <div class="quick">
+    <button data-go="log"><b>How did the meal go?</b><span>Speak or write a quick note</span></button>
+    <button data-go="meals"><b>What to cook</b><span>Today's menu and recipes</span></button>
+    <button data-go="guide" data-open="g-table"><b>Hard meal right now?</b><span>What to say and do</span></button>
+    <button data-go="track"><b>Record a check</b><span>Pulse, blood pressure, weight</span></button>
+  </div>
+
+  <div class="card" id="insightCard" hidden>
+    <span class="tag">From your meal diary</span>
+    <div id="insightShort"></div>
+    <button class="btn ghost small" data-go="log" style="margin-top:8px">See all patterns</button>
+  </div>
+
+  <div class="card news" id="latestNews" hidden></div>
+</section>
+
+<!-- ================= MEALS ================= -->
+<section id="meals">
+  <h2>Menus and recipes</h2>
+  <p class="lead">A day of meals and snacks built around what your child likes, with portions and simple recipes. Your treatment team's plan always comes first.</p>
+
+  <div class="card">
+    <label class="f" for="menuDate">Day</label>
+    <input type="date" id="menuDate">
+    <div class="btns">
+      <button class="btn" id="genMenu">Make a menu for this day</button>
+      <button class="btn ghost" id="askClaudeMenu">Ask Claude for ideas</button>
+    </div>
+    <div class="status" id="menuStatus"></div>
+  </div>
+
+  <div class="card" id="pasteBox" hidden>
+    <h3>Paste Claude's answer</h3>
+    <ol class="small">
+      <li>Your request has been copied. In Claude, paste it into a new chat and send it.</li>
+      <li>When Claude replies, copy its whole answer.</li>
+      <li>Paste it below and tap <b>Use this menu</b>.</li>
+    </ol>
+    <div class="btns" style="margin-top:0"><a class="btn ghost small" href="https://claude.ai/new" target="_blank" rel="noopener">Open Claude</a></div>
+    <label class="f" for="pasteText">Claude's answer</label>
+    <textarea id="pasteText" placeholder="Paste here…"></textarea>
+    <div class="btns"><button class="btn" id="usePaste">Use this menu</button><button class="btn ghost" id="cancelPaste">Cancel</button></div>
+    <div class="status" id="pasteStatus"></div>
+  </div>
+
+  <div id="menuOut"></div>
+
+  <details><summary>Typical starting portions</summary><div class="body">
+    <p class="small muted">Typical starting amounts used by UK eating disorder services. Many children need more than this during recovery. Your team will tell you what your child needs.</p>
+    <h4>Protein (one of these)</h4>
+    <ul><li>1 full chicken breast · 1 fish fillet · 2 eggs</li><li>3 slices of meat (each the size of a playing card)</li><li>3 sausages · 6 nuggets · 1 medium burger · 3 slices of pizza</li><li>4 tablespoons of beans · cheese the size of a small matchbox</li></ul>
+    <h4>Carbohydrates (one of these)</h4>
+    <ul><li>4 heaped serving spoons of rice, pasta or couscous</li><li>2 medium boiled potatoes · 2 scoops of mash · 1 large baked potato</li><li>2 slices of bread · 1 wrap · 1 bagel</li></ul>
+    <h4>Vegetables</h4><ul><li>2 serving spoons, or 1 dessert bowl of salad</li></ul>
+    <h4>Cereal</h4><ul><li>1 mug (200 ml) of cornflakes or similar · or 2 Weetabix, with whole milk</li></ul>
+    <h4>Desserts (one of these)</h4><ul><li>¼ fruit pie · 1 individual cheesecake · 2 scoops of ice cream · 5 tablespoons of custard</li></ul>
+    <h4>Snacks (each of these is one snack)</h4><ul><li>1 nut-based cereal bar · 4 biscuits · 1 normal-size chocolate bar</li><li>1 scone with butter · 2 pancakes with butter · 4 crackers with 2 cheese triangles</li><li>Fruit only together with something else, e.g. an apple with 2 tbsp peanut butter</li></ul>
+  </div></details>
+</section>
+
+<!-- ================= DIARY ================= -->
+<section id="log">
+  <h2>Meal diary</h2>
+  <p class="lead">A quick note after each meal. Alongside looks for patterns on your phone and suggests things to try or to ask your team.</p>
+
+  <div class="card">
+    <div class="row">
+      <div><label class="f" for="logDate">Day</label><input type="date" id="logDate"></div>
+      <div><label class="f" for="logSlot">Meal</label><select id="logSlot"></select></div>
+    </div>
+    <label class="f">How much was eaten?</label>
+    <div class="seg" id="logEaten" role="group" aria-label="How much was eaten"></div>
+    <div class="row">
+      <div><label class="f" for="logMins">Minutes it took</label><input type="number" id="logMins" min="0" max="240" inputmode="numeric" placeholder="e.g. 35"></div>
+      <div><label class="f" for="logDistress">Distress <small id="distressVal">(0 = calm, 5 = very upset)</small></label><input type="range" id="logDistress" min="0" max="5" step="1" value="0"></div>
+    </div>
+    <label class="f">Anything you noticed?</label>
+    <div class="chips" id="logTags"></div>
+    <label class="f" for="logNotes">Notes</label>
+    <textarea id="logNotes" placeholder="What happened, what helped, what was hard…"></textarea>
+    <div class="btns">
+      <button class="btn ghost" id="micBtn" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span id="micLabel">Speak</span></button>
+      <button class="btn" id="saveLog">Save note</button>
+    </div>
+    <div class="status" id="logStatus"></div>
+  </div>
+
+  <div class="card">
+    <h3>Patterns from the last 2 weeks</h3>
+    <div id="insightOut"><p class="muted small" style="margin:0">Save a few meal notes and patterns will appear here.</p></div>
+    <div class="btns"><button class="btn ghost small" id="askClaudeReview">Ask Claude to review my notes</button></div>
+    <div class="status" id="reviewStatus"></div>
+  </div>
+
+  <div class="card">
+    <h3>Recent notes</h3>
+    <div id="logList"><p class="muted small">No notes yet.</p></div>
+  </div>
+</section>
+
+<!-- ================= CHECKS ================= -->
+<section id="track">
+  <h2>Health checks</h2>
+  <p class="lead">Record the checks your team asks you to do at home, so you can spot changes and show them at appointments. Keep this screen to yourself. Seeing numbers can upset a child with anorexia.</p>
+  <div class="card">
+    <div class="row">
+      <div><label class="f" for="vDate">Day</label><input type="date" id="vDate"></div>
+      <div><label class="f" for="vPulse">Pulse <small>(beats/min)</small></label><input type="number" id="vPulse" inputmode="numeric" min="20" max="220"></div>
+    </div>
+    <div class="row">
+      <div><label class="f" for="vSys">Blood pressure: top <small>(mmHg)</small></label><input type="number" id="vSys" inputmode="numeric" min="40" max="250"></div>
+      <div><label class="f" for="vDia">Blood pressure: bottom <small>(mmHg)</small></label><input type="number" id="vDia" inputmode="numeric" min="20" max="160"></div>
+    </div>
+    <div class="row">
+      <div><label class="f" for="vWeight">Weight <small>(kg, optional)</small></label><input type="number" id="vWeight" step="0.1" inputmode="decimal" min="10" max="200"></div>
+      <div><label class="f" for="vHeight">Height <small>(cm, optional)</small></label><input type="number" id="vHeight" step="0.1" inputmode="decimal" min="80" max="220"></div>
+      <div><label class="f" for="vTemp">Temperature <small>(°C, optional)</small></label><input type="number" id="vTemp" step="0.1" inputmode="decimal" min="30" max="43"></div>
+    </div>
+    <div class="btns"><button class="btn" id="saveVital">Save check</button></div>
+    <div class="status" id="vStatus"></div>
+  </div>
+  <div class="card" id="charts"><p class="muted small" style="margin:0">Charts appear here once you've saved two or more checks.</p></div>
+  <div class="card"><h3>All checks</h3><div class="tbl" id="vTable"><p class="muted small">No checks yet.</p></div></div>
+</section>
+
+<!-- ================= GUIDE ================= -->
+<section id="guide">
+  <h2>Guide</h2>
+  <p class="lead">Practical, evidence-based help for each part of the day.</p>
+
+  <div class="group">At the table</div>
+  <details id="g-table"><summary>Before, during and after a meal</summary><div class="body">
+    <h4>Before</h4>
+    <ul><li>Decide the meal and portion yourself. Asking "what do you want?" gives the illness a way in.</li><li>Serve the plate already filled.</li><li>Give a short heads-up: "Dinner in 10 minutes."</li><li>Take three slow breaths. Calm is catching.</li></ul>
+    <h4>During</h4>
+    <div class="say">
+      <div class="yes"><h4>Helpful to say</h4><ul><li>"I know this is really hard. I'm right here."</li><li>"This is your medicine. You need all of it."</li><li>"I can see the illness is shouting at you right now."</li><li>"Next bite." (calm, repeated, no debate)</li><li>"Let's not talk about the food. Tell me about…"</li></ul></div>
+      <div class="no"><h4>Try to avoid</h4><ul><li>Calories, grams, weight, sizes</li><li>"Healthy" or "unhealthy" foods</li><li>Comments about anyone's body</li><li>Bargaining ("just half")</li><li>Threats, shouting, long explanations</li></ul></div>
+    </div>
+    <ul style="margin-top:12px"><li>Sit with them for the whole meal, and eat together if you can.</li><li>Many services suggest about 30 minutes for a meal and 15 for a snack.</li><li>Use light distraction: chat, a card game, a podcast.</li></ul>
+    <h4>After</h4>
+    <ul><li>Stay together for 30–60 minutes, doing something calm.</li><li>Try to avoid bathroom trips straight after eating, and no "walking it off".</li><li>Comfort them, don't debate: "I know it feels awful. It will get easier."</li></ul>
+  </div></details>
+  <details><summary>Compassionate words: five steps</summary><div class="body">
+    <ol><li><b>Stay in the moment.</b> "I can see it's taking a while to pick up the fork."</li><li><b>Be curious.</b> "I'm wondering whether this is difficult for you."</li><li><b>Be compassionate.</b> "It looks really hard. I'm sorry."</li><li><b>Be supportive and firm.</b> "I want you to start. Trust me, I know what you need."</li><li><b>Look ahead.</b> "After lunch we'll watch that film."</li></ol>
+    <p>Try to avoid criticism. Outside mealtimes, keep doing things you both enjoy.</p>
+  </div></details>
+  <details><summary>If they refuse</summary><div class="body">
+    <ol><li><b>Pause.</b> Lower your voice and sit closer.</li><li><b>Name the illness:</b> "I know it's telling you not to. I'm not going to let it decide."</li><li><b>Repeat the expectation warmly:</b> "You need to finish this. I'll stay with you."</li><li><b>Give it time.</b> Calm persistence often works after a few minutes.</li><li>If the meal can't be finished, stay calm, don't punish them, and tell the team.</li></ol>
+  </div></details>
+
+  <div class="group">Behaviours</div>
+  <details><summary>Hiding or throwing away food</summary><div class="body"><p>This is driven by the illness, not by bad character. Supervise all meals and snacks for now. If you find hidden food, say calmly: "I found this. We'll have it now together." Tell the team, especially if weight isn't going up.</p></div></details>
+  <details><summary>Eating very slowly, rituals, cutting food small</summary><div class="body"><p>Prompt gently: "Bigger bites, please." Agree time limits with the team. Serve food so it's harder to pick apart: sauces mixed in, butter already spread.</p></div></details>
+  <details><summary>Exercise and constant movement</summary><div class="body"><p>Watch for exercise in their room, always standing, or pacing. If the team has restricted activity, keep the rule clear and kind: "Your heart needs rest right now." Offer calm activities instead, and report it if it continues.</p></div></details>
+  <details><summary>Bathroom straight after eating</summary><div class="body"><p>This can sometimes mean getting rid of food. Encourage a bathroom visit before meals, keep them company afterwards, and tell the team if you're worried. Don't accuse them.</p></div></details>
+  <details><summary>Weight not going up despite eating</summary><div class="body"><p>Possible reasons include portions still too small, hidden exercise, food thrown away, or very high energy needs during recovery. Share photos of meals with the team and ask: "What should we change this week?"</p></div></details>
+  <details><summary>Anger, tears, "I hate you"</summary><div class="body"><p>Distress often peaks as eating increases, which usually means you're doing the right thing. Stay calm: "I love you too much to let the illness win." Reconnect later through something unrelated to food.</p></div></details>
+  <details><summary>Bargaining and asking for reassurance</summary><div class="body"><p>Give one short, kind answer, then move on: "This is the right amount. I'm in charge of the food so you don't have to be."</p></div></details>
+  <details><summary>Body checking and comparing</summary><div class="body"><p>Keep all body, weight and diet talk out of the home, including about yourselves. Gently redirect, and mention it to the team.</p></div></details>
+  <details><summary>If you find out they are self-harming</summary><div class="body"><p>Your feelings are valid. Try not to direct them at your child. Ask how they're feeling without leading with your worries. Tell them you love them no matter what. Together, notice what triggers it and plan other ways to cope with strong feelings. If you're worried about their safety, go to A&amp;E.</p></div></details>
+
+  <div class="group">Food</div>
+  <details><summary>Principles of eating for recovery</summary><div class="body"><ul><li><b>3 meals and 2–3 snacks</b>, with no more than about 3 hours without food.</li><li><b>Parents decide</b> what, when and how much. The child's job is to eat it.</li><li><b>Carbohydrate at every meal</b>, about half the plate.</li><li><b>Fats are essential</b> for the brain and hormones: butter, oil, cheese, whole milk.</li><li><b>Go easy on bulky foods</b> like big salads and fizzy drinks. They fill up without enough energy.</li><li><b>No diet products:</b> no light, zero, low-fat or sugar-free versions.</li><li><b>Drinks:</b> about 2 litres a day, with no more than 2 cups of tea or coffee.</li></ul></div></details>
+  <details><summary>Reintroducing feared foods</summary><div class="body"><p>Foods the illness has labelled "bad" (chocolate, chips, pizza, cake) need to come back over time, step by step, with your team's guidance. Start small, alongside a safe food, at a calm time of day. Add the foods your child avoids to their profile, and menus will bring in at most one a day.</p></div></details>
+  <details><summary>Early weeks: physical signs to report</summary><div class="body"><p>Tell the team promptly about swollen ankles or face, prolonged bloating, night sweats, unusual weakness, dizziness, or a racing or fluttering heart.</p></div></details>
+
+  <div class="group">Understanding</div>
+  <details><summary>What anorexia is, and what it isn't</summary><div class="body"><p>Anorexia nervosa is a serious mental illness with physical effects. It isn't a choice or a diet gone too far, and it isn't caused by bad parenting. Starvation itself makes thinking rigid, anxious and food-focused. The Minnesota Starvation Experiment showed this even in healthy adults. Food comes first, and thinking usually eases as weight recovers.</p></div></details>
+  <details><summary>How family-based treatment works</summary><div class="body"><h4>Phase 1 · Restoring weight</h4><p>Parents take charge of all eating.</p><h4>Phase 2 · Handing control back</h4><p>The young person gradually takes back choices.</p><h4>Phase 3 · Back to normal life</h4><p>Independence and preventing relapse.</p><p>Treatment usually takes 6–12 months, and progress is rarely a straight line.</p></div></details>
+  <details><summary>Trusted sources</summary><div class="body"><ul>
+    <li><a href="https://www.beateatingdisorders.org.uk/" target="_blank" rel="noopener">Beat</a> (UK eating disorder charity)</li>
+    <li><a href="https://www.nhs.uk/mental-health/feelings-symptoms-behaviours/behaviours/eating-disorders/anorexia/" target="_blank" rel="noopener">NHS: Anorexia nervosa</a></li>
+    <li><a href="https://www.nice.org.uk/guidance/ng69" target="_blank" rel="noopener">NICE guideline NG69</a></li>
+    <li><a href="https://www.feast-ed.org" target="_blank" rel="noopener">F.E.A.S.T.</a> (families supporting treatment)</li>
+    <li><a href="https://anorexiafamily.com" target="_blank" rel="noopener">Eva Musby: anorexiafamily.com</a></li>
+  </ul><p class="small">Some websites and social media accounts promote eating-disorder behaviours. Gently talk with your child about what they see online.</p></div></details>
+
+  <div class="group">You</div>
+  <details><summary>Two homes or several carers, one plan</summary><div class="body"><ul><li>Use the same meal plan, portions and rules in every home.</li><li>Send a short handover each time your child moves between homes.</li><li>Agree together what to say when they ask for an exception.</li><li>Keep disagreements between adults, away from the table.</li></ul></div></details>
+  <details><summary>Looking after yourself</summary><div class="body"><p><b>This is not your fault.</b> Have one person you can text after a hard meal. Take 10 minutes outside for yourself each day. Notice small wins. Keep some family time that has nothing to do with food.</p></div></details>
+</section>
+
+<!-- ================= UPDATES ================= -->
+<section id="news">
+  <h2>Research updates</h2>
+  <p class="lead">New guidance and research from trusted sources, summarised for parents and added each day.</p>
+  <div id="newsList"><div class="card"><p class="muted" style="margin:0">No updates yet. Connect to the internet and they'll appear here.</p></div></div>
+</section>
+
+<!-- ================= PROFILE ================= -->
+<section id="profile">
+  <h2>Your child's profile</h2>
+  <p class="lead">This shapes menus, tips and alerts. It stays on this phone only.</p>
+  <div class="card">
+    <div class="row">
+      <div><label class="f" for="pName">Child's first name <small>(optional)</small></label><input type="text" id="pName" maxlength="40"></div>
+      <div><label class="f" for="pAge">Age</label><input type="number" id="pAge" min="5" max="25" inputmode="numeric"></div>
+    </div>
+    <label class="f" for="pLikes">Foods they like <small>(separate with commas)</small></label>
+    <textarea id="pLikes" placeholder="e.g. cottage cheese, ham, boiled eggs, pasta"></textarea>
+    <label class="f" for="pFear">Foods the illness avoids <small>(menus bring back at most one a day)</small></label>
+    <textarea id="pFear" placeholder="e.g. chocolate, chips, pizza"></textarea>
+    <div class="row">
+      <div><label class="f" for="pAllergy">Allergies or foods to never use</label><input type="text" id="pAllergy" placeholder="e.g. nuts, fish"></div>
+      <div><label class="f" for="pDiet">Family diet <small>(optional)</small></label><input type="text" id="pDiet" placeholder="e.g. vegetarian, halal"></div>
+    </div>
+    <div class="row">
+      <div><label class="f" for="pSnacks">Snacks per day</label><select id="pSnacks"><option value="2">2 snacks</option><option value="3" selected>3 snacks</option></select></div>
+      <div><label class="f" for="pPortion">Portion size your team wants</label><select id="pPortion">
+        <option value="1">Standard starting portions</option>
+        <option value="1.25">About a quarter more</option>
+        <option value="1.5">About half as much again</option>
+        <option value="2">About double</option>
+      </select></div>
+    </div>
+    <label class="f" for="pPlan">Anything else your treatment team has asked for</label>
+    <textarea id="pPlan" placeholder="e.g. Dessert after lunch and dinner. 200 ml milk and toast at bedtime. No exercise."></textarea>
+    <div class="row">
+      <div><label class="f" for="pTeam">Treatment team name</label><input type="text" id="pTeam" placeholder="e.g. Local CAMHS eating disorder team"></div>
+      <div><label class="f" for="pPhone">Team phone number</label><input type="tel" id="pPhone"></div>
+    </div>
+    <label class="f" for="pPulse">Pulse alert: warn me if the pulse is below <small>(beats/min, ask your team)</small></label>
+    <input type="number" id="pPulse" min="20" max="100" inputmode="numeric" placeholder="Ask your team for this number">
+    <div class="btns"><button class="btn" id="saveProfile">Save profile</button></div>
+    <div class="status" id="pStatus"></div>
+  </div>
+
+  <div class="card">
+    <h3>Your data</h3>
+    <p class="small muted" style="margin-top:0">Everything you enter stays on this phone. Nothing is sent anywhere. Make a backup now and then, so you can restore it if you change phones.</p>
+    <div class="btns">
+      <button class="btn ghost small" id="exportBtn">Save a backup</button>
+      <label class="btn ghost small" for="importFile" style="cursor:pointer">Restore a backup</label>
+      <input type="file" id="importFile" accept="application/json,.json" hidden>
+    </div>
+    <div class="status" id="dataStatus"></div>
+  </div>
+</section>
+
+<!-- ================= URGENT ================= -->
+<section id="urgent">
+  <h2>Urgent help</h2>
+  <p class="lead">When in doubt, get help. These are UK numbers.</p>
+  <div class="card danger">
+    <span class="tag danger">Call 999 or go to A&amp;E now if they:</span>
+    <ul><li>Faint, collapse or can't be woken properly</li><li>Have chest pain, or a racing, pounding or irregular heartbeat</li><li>Are very short of breath, confused or very drowsy</li><li>Have hurt themselves, or say they plan to end their life</li><li>Vomit blood</li></ul>
+    <p style="margin-bottom:4px"><b>Many NHS eating disorder services also advise A&amp;E if your child has:</b></p>
+    <ul><li>Refused all drinks for 36 hours</li><li>Refused all food for 48–72 hours</li><li>Lost 1 kg or more a week for more than 2 weeks</li></ul>
+    <p class="small">If they refuse to go and it isn't safe to take them, call 999. If they run away, call 999 and report a missing child. Always follow your own team's advice where it differs.</p>
+    <a class="btn danger-btn" href="tel:999">Call 999</a>
+  </div>
+  <div class="card warm">
+    <span class="tag warm">Call your team the same day (or NHS 111 out of hours) if:</span>
+    <ul><li>They're dizzy or light-headed, especially when standing</li><li>They feel very cold or weak, or have a very slow pulse</li><li>Their feet, ankles or face are swollen</li><li>They're being sick, or you suspect they're making themselves sick</li><li>They talk about self-harm or hopelessness</li></ul>
+  </div>
+  <div class="card">
+    <h3>Contacts</h3>
+    <ul class="list">
+      <li id="teamContact" hidden><span id="teamName">Your treatment team</span><a class="tel" id="teamPhone" href="#"></a></li>
+      <li><span>Emergency</span><a class="tel" href="tel:999">999</a></li>
+      <li><span>NHS 111 (urgent, not an emergency)</span><a class="tel" href="tel:111">111</a></li>
+      <li><span>Beat Helpline (for parents and carers)</span><a class="tel" href="tel:08088010677">0808 801 0677</a></li>
+      <li><span>Beat Youthline (under 18s)</span><a class="tel" href="tel:08088010711">0808 801 0711</a></li>
+      <li><span>YoungMinds Crisis Messenger, 24/7</span><a class="tel" href="sms:85258&amp;body=YM">Text YM to 85258</a></li>
+      <li><span>Childline, 24/7</span><a class="tel" href="tel:08001111">0800 1111</a></li>
+      <li><span>Samaritans, 24/7</span><a class="tel" href="tel:116123">116 123</a></li>
+    </ul>
+  </div>
+</section>
+
+<p class="note">Alongside shares general, evidence-based guidance for families. It does not replace your child's treatment team. Always follow their advice for your child's plan. Free and open source.</p>
+</main>
+
+<nav><div class="in">
+  <button data-go="today" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Today</button>
+  <button data-go="meals"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 2v20M4 2v6a3 3 0 0 0 6 0V2M17 2c-2 2-3 5-3 8h3v12"/></svg>Meals</button>
+  <button data-go="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v13H8l-4 4z"/><path d="M8 9h8M8 13h5"/></svg>Diary</button>
+  <button data-go="track"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg>Checks</button>
+  <button data-go="guide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/></svg>Guide</button>
+  <button data-go="news"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h13v16H6a2 2 0 0 1-2-2z"/><path d="M17 8h3v10a2 2 0 0 1-2 2"/><path d="M8 8h5M8 12h5M8 16h3"/></svg>Updates</button>
+</div></nav>
+
+<script src="meals.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
